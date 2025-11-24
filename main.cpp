@@ -3,7 +3,8 @@
 using namespace simdjson;
 int main(void) {
     ondemand::parser parser;
-    padded_string json = padded_string::load("twitter.json");
+    padded_string json = padded_string::load("sample.json");
     ondemand::document tweets = parser.iterate(json);
-    std::cout << uint64_t(tweets["search_metadata"]["count"]) << " results." << std::endl;
+    std::cout << uint64_t(tweets["age"]) << " results." << std::endl;
+    
 }
