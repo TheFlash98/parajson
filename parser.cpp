@@ -1,6 +1,7 @@
-#include "utils.h"
-#include <arm_neon.h>
+#include <immintrin.h>
+#include <bitset>
 
+#include "utils.h"
 #include "parser.h"
 
 namespace ParaJson {
@@ -28,7 +29,7 @@ namespace ParaJson {
     }
 
     uint64_t extract_literal_mask(
-            const Warp &raw, uint64_t escape_mask, uint64_t *prev_literal_ending, uint64_t *quote_mask) {
+            char* raw, uint64_t escape_mask, uint64_t *prev_literal_ending, uint64_t *quote_mask) {
         uint64_t _quote_mask = __cmpeq_mask(raw, '"') & ~escape_mask;
         uint64_t literal_mask = _mm_cvtsi128_si64(
                 _mm_clmulepi64_si128(_mm_set_epi64x(0ULL, _quote_mask), _mm_set1_epi8(0xFF), 0));
@@ -36,6 +37,21 @@ namespace ParaJson {
         *quote_mask = _quote_mask;
         *prev_literal_ending = static_cast<uint64_t>(static_cast<int64_t>(literal_mask) >> 63);
         return literal_mask;
+    }
+
+    const size_t kStructuralUnrollCount = 8;
+    inline void construct_structural_character_pointers(
+            uint64_t pseudo_structural_mask, size_t offset, size_t *indices, size_t *base) {
+        size_t next_base = *base + __builtin_popcountll(pseudo_structural_mask);
+        while (pseudo_structural_mask) {
+            for (size_t i = 0; i < kStructuralUnrollCount; ++i) {
+                size_t bit = __builtin_ctzll(pseudo_structural_mask);     // tzcnt
+                indices[*base + i] = offset + bit;
+                pseudo_structural_mask &= (pseudo_structural_mask - 1);   // blsr
+            }
+            *base += kStructuralUnrollCount;
+        }
+        *base = next_base;
     }
 
 
@@ -64,9 +80,9 @@ namespace ParaJson {
             char* warp = (input + offset);
             uint64_t escape_mask = extract_escape_mask(warp, &prev_escape_mask);
             uint64_t literal_mask = extract_literal_mask(warp, escape_mask, &prev_quote_mask, &quote_mask);
-            std::cout << std::bitset<64>(literal_mask) << "\n";
-            // // Dump pointers for *previous* iteration.
-            // construct_structural_character_pointers(pseudo_mask, offset - 64, indices, &num_indices);
+            std::cout << (std::bitset<64>(literal_mask)) << "\n";
+            // Dump pointers for *previous* iteration.
+            construct_structural_character_pointers(pseudo_mask, offset - 64, indices, &num_indices);
 
             // extract_structural_whitespace_characters(warp, literal_mask, &structural_mask, &whitespace_mask);
             // pseudo_mask = extract_pseudo_structural_mask(
