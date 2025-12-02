@@ -17,6 +17,7 @@ add_executable(parajson
     main.cpp
     utils.cpp
     parser.cpp
+    simdjson.cpp
 )
 
 target_link_libraries(parajson PRIVATE parlay)
