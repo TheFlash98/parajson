@@ -1,5 +1,5 @@
 CXX = c++
-CXXFLAGS = -std=c++17 -O2 -Wall -Wextra
+CXXFLAGS = -std=c++17 -O2 -Wall -Wextra -mavx2
 SRC = main.cpp utils.cpp parser.cpp
 OBJDIR = build
 OBJ = $(patsubst %.cpp,$(OBJDIR)/%.o,$(SRC))

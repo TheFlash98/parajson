@@ -2,6 +2,8 @@
 #define PARAJSON_PARSER_H
 
 #include <immintrin.h>
+#include <cstdint>
+#include <iostream>
 
 namespace ParaJson {
 
@@ -23,9 +25,20 @@ namespace ParaJson {
         return (hi << 32U) | lo;
     }
 
-    inline uint64_t __cmpeq_mask(const SIMDPair &raw, char c) {
-        return __cmpeq_mask(raw.first, raw.second, c);
+    // inline uint64_t __cmpeq_mask(const SIMDPair &raw, char c) {
+    //     return __cmpeq_mask(raw.first, raw.second, c);
+    // }
+
+    inline uint64_t __cmpeq_mask(char* input, char c) {
+        std::cout << "Using fallback __cmpeq_mask\n";
+        uint64_t mask = 0;
+        for (int i = 0; i < 64; ++i) {
+            char val = input[i];
+            if (val == c) mask |= (1ULL << i);
+        }
+        return mask;
     }
+
 }
 
 

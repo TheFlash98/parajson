@@ -1,7 +1,10 @@
 #include <iostream>
 #include <stdio.h>
-#include "utils.h"
+#include <string.h>
+#include <bitset>
 
+
+#include "utils.h"
 #include "parser.h"
 
 int main(void) {
@@ -13,8 +16,8 @@ int main(void) {
     char *input = aligned_malloc(size + 2 * kAlignmentSize);
     memcpy(input, buf, size + 1);
 
-    ParaJson::SIMDPair simd_pair(input);
-    uint64_t mask = ParaJson::__cmpeq_mask(simd_pair, '{');
-    std::cout << "Mask for '{': " << std::hex << mask << std::dec << "\n";
-    
+    // ParaJson::SIMDPair simd_pair(input);
+    uint64_t mask = ParaJson::__cmpeq_mask(input, '"');
+    std::cout << "Mask for '\"': " << std::hex << mask << std::dec << "\n";
+    std::cout << std::bitset<64>(mask) << "\n";
 }
