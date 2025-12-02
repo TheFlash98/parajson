@@ -1,10 +1,20 @@
 #include <iostream>
-#include "simdjson.h"
-using namespace simdjson;
+#include <stdio.h>
+#include "utils.h"
+
+#include "parser.h"
+
 int main(void) {
-    ondemand::parser parser;
-    padded_string json = padded_string::load("sample.json");
-    ondemand::document tweets = parser.iterate(json);
-    std::cout << uint64_t(tweets["age"]) << " results." << std::endl;
+    size_t size;
+    char *buf = read_file("sample.json", &size);
+    std::cout << "File size: " << size << " bytes\n";
+    std::cout << "File content:\n" << buf << "\n";
+    
+    char *input = aligned_malloc(size + 2 * kAlignmentSize);
+    memcpy(input, buf, size + 1);
+
+    ParaJson::SIMDPair simd_pair(input);
+    uint64_t mask = ParaJson::__cmpeq_mask(simd_pair, '{');
+    std::cout << "Mask for '{': " << std::hex << mask << std::dec << "\n";
     
 }
