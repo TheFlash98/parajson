@@ -5,6 +5,13 @@ namespace ParaJson {
     static const uint64_t kEvenMask64 = 0x5555555555555555U;
     static const uint64_t kOddMask64 = ~kEvenMask64;
 
+    JSON::JSON(char *document, size_t size,  bool manual_construct) 
+        : input(document), input_len(size), num_indices(0), indices(nullptr), idx_ptr(nullptr) {
+        if (!manual_construct) {
+            // Perform parsing here (not implemented in this snippet)
+        }
+    }
+
     // @formatter:off
     // uint64_t extract_escape_mask(const SIMDPair &raw, uint64_t *prev_odd_backslash_ending_mask) {
     //     uint64_t backslash_mask = __cmpeq_mask(raw, '\\');
