@@ -39,6 +39,17 @@ namespace ParaJson {
         return mask;
     }
 
+
+    class JSON {
+        public:
+            char *input;
+            size_t input_len, num_indices;
+            size_t *indices;
+            const size_t *idx_ptr;
+        
+        JSON(char *document, size_t size, bool manual_construct = false);
+        ~JSON();
+    };
 }
 
 
