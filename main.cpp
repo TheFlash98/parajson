@@ -4,6 +4,7 @@
 #include <bitset>
 #include <getopt.h>
 #include "simdjson.h"
+#include <chrono>
 
 #include "utils.h"
 #include "parser.h"
@@ -12,7 +13,7 @@ void simd_parse(char *input_path) {
     simdjson::ondemand::parser parser;
     simdjson::padded_string json = simdjson::padded_string::load(input_path);
     simdjson::ondemand::document tweets = parser.iterate(json);
-    std::cout << uint64_t(tweets["age"]) << " results." << std::endl;
+    // std::cout << uint64_t(tweets["age"]) << " results." << std::endl;
 }
 
 void parajson_parse(char *input_path) {
@@ -66,6 +67,13 @@ int main(int argc, char **argv) {
         std::cerr << "Input file is required." << std::endl;
         return 1;
     }
-
+    
+    auto start = std::chrono::steady_clock::now();
+    
     impl == SIMD ? simd_parse(input_path) : parajson_parse(input_path);
+    
+    auto end = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end - start;
+    std::cout << "Implementation: " << impl << std::endl;
+    std::cout << "Time taken: " << elapsed_seconds.count() << " seconds" << std::endl;
 }
