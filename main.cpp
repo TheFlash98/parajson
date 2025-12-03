@@ -11,15 +11,14 @@
 void simd_parse(char *input_path) {
     simdjson::ondemand::parser parser;
     simdjson::padded_string json = simdjson::padded_string::load(input_path);
-    simdjson::ondemand::document tweets = parser.iterate(json);
-    // std::cout << uint64_t(tweets["age"]) << " results." << std::endl;
+    simdjson::ondemand::document parsed_json = parser.iterate(json);
 }
 
 void parajson_parse(char *input_path) {
     size_t size;
     char *buf = read_file(input_path, &size);
     std::cout << "File size: " << size << " bytes\n";
-    std::cout << "File content:\n" << buf << "\n";
+    // std::cout << "File content:\n" << buf << "\n";
     
     char *input = aligned_malloc(size + 2 * kAlignmentSize);
     memcpy(input, buf, size + 1);
@@ -55,7 +54,7 @@ int main(int argc, char **argv) {
                 break;
             case 'f':
                 input_path = optarg;
-                std::cout << "Input JSON: " << input_path << std::endl;
+                // std::cout << "Input JSON: " << input_path << std::endl;
                 break;
             default:
                 return 1;

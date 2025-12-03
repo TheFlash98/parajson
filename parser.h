@@ -6,14 +6,26 @@
 
 namespace ParaJson {
 
-    inline uint64_t __cmpeq_mask(char* input, char c) {
-        std::cout << "Using fallback __cmpeq_mask\n";
-        uint64_t mask = 0;
-        for (int i = 0; i < 64; ++i) {
-            char val = input[i];
-            if (val == c) mask |= (1ULL << i);
+    struct Warp {
+        __m128i hi, lo;
+
+        Warp(const __m128i &h, const __m128i &l) : hi(h), lo(l) {}
+
+        explicit Warp(const char *address) {
+            lo = _mm_loadu_si128(reinterpret_cast<const __m128i *>(address));
+            hi = _mm_loadu_si128(reinterpret_cast<const __m128i *>(address + 16));
         }
-        return mask;
+    };
+
+    inline uint32_t __cmpeq_mask(const __m128i raw_hi, const __m128i raw_lo, char c) {
+        const __m128i vec_c = _mm_set1_epi8(c);
+        uint32_t hi = static_cast<uint32_t>(_mm_movemask_epi8(_mm_cmpeq_epi8(raw_hi, vec_c)));
+        uint32_t lo = static_cast<uint32_t>(_mm_movemask_epi8(_mm_cmpeq_epi8(raw_lo, vec_c)));
+        return (hi << 16U) | lo;
+    }
+
+    inline uint32_t __cmpeq_mask(const Warp &raw, char c) {
+        return __cmpeq_mask(raw.hi, raw.lo, c);
     }
 
 
