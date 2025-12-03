@@ -65,7 +65,6 @@ def run_benchmarks(implementation, warmups, iterations, suppress_output = False,
 def main():
     args = parse_args()
     run_benchmarks(args.implementation, args.warmups, args.iter, args.suppress, args.file)
-    print("All benchmarks completed successfully.")
 
 if __name__ == "__main__":
     main()
