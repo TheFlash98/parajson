@@ -4,7 +4,6 @@
 #include <bitset>
 #include <getopt.h>
 #include "simdjson.h"
-#include <chrono>
 
 #include "utils.h"
 #include "parser.h"
@@ -67,13 +66,6 @@ int main(int argc, char **argv) {
         std::cerr << "Input file is required." << std::endl;
         return 1;
     }
-    
-    auto start = std::chrono::steady_clock::now();
-    
+
     impl == SIMD ? simd_parse(input_path) : parajson_parse(input_path);
-    
-    auto end = std::chrono::steady_clock::now();
-    std::chrono::duration<double> elapsed_seconds = end - start;
-    std::cout << "Implementation: " << impl << std::endl;
-    std::cout << "Time taken: " << elapsed_seconds.count() << " seconds" << std::endl;
 }
