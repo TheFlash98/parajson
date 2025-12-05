@@ -3,10 +3,12 @@
 #include <string.h>
 #include <bitset>
 #include <getopt.h>
+#include <chrono>
 #include "simdjson.h"
 
 #include "utils.h"
 #include "parser.h"
+#include "tape.h"
 
 void simd_parse(char *input_path) {
     simdjson::ondemand::parser parser;
@@ -25,6 +27,8 @@ void parajson_parse(char *input_path) {
 
     auto json = ParaJson::JSON(input, size);
     std::cout << "size of JSON object: " << json.input_len << " bytes\n";
+    ParaJson::Tape tape(size, size);
+    tape.state_machine(const_cast<char *>(json.input), json.indices, json.num_indices);
 }
 
 int main(int argc, char **argv) {
@@ -32,15 +36,19 @@ int main(int argc, char **argv) {
     enum Implementation {SIMD, PARAJSON};
     Implementation impl = PARAJSON;
     char *input_path = NULL;
+    int num_iterations = 1;
+    int warmups = 0;
 
     int option_index = 0;
     static struct option long_options[] = {
         {"implementation", required_argument, NULL, 'i'},
         {"file", required_argument, NULL, 'f'},
+        {"repeats", required_argument, NULL, 'r'},
+        {"warmups", required_argument, NULL, 'w'},
         {NULL, 0, NULL, 0}
     };
 
-    while ((c = getopt_long(argc, argv, "i:f:", long_options, &option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "i:f:r:w:", long_options, &option_index)) != -1) {
         switch (c) {
             case 'i':
                 if (strcmp(optarg, "simd") == 0) {
@@ -56,6 +64,12 @@ int main(int argc, char **argv) {
                 input_path = optarg;
                 // std::cout << "Input JSON: " << input_path << std::endl;
                 break;
+            case 'r':
+                num_iterations = atoi(optarg);
+                break;
+            case 'w':
+                warmups = atoi(optarg);
+                break;
             default:
                 return 1;
         }
@@ -66,5 +80,22 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    impl == SIMD ? simd_parse(input_path) : parajson_parse(input_path);
+    auto warmup_start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < warmups; ++i) {
+        impl == SIMD ? simd_parse(input_path) : parajson_parse(input_path);
+    }
+    auto warmup_end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> warmup_diff = warmup_end - warmup_start;
+    if (warmups > 0)
+        std::cout << "Average Time for " << warmups << " warmups: " << warmup_diff.count() / warmups << " s\n";
+    else
+        std::cout << "No warmup iterations.\n";
+    
+    auto iterations_start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < num_iterations; ++i) {
+        impl == SIMD ? simd_parse(input_path) : parajson_parse(input_path);
+    }
+    auto iterations_end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> iterations_diff = iterations_end - iterations_start;
+    std::cout << "Average Time for " << num_iterations << " iterations: " << iterations_diff.count() / num_iterations << " s\n";
 }
