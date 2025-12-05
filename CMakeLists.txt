@@ -17,6 +17,9 @@ add_executable(parajson
     main.cpp
     utils.cpp
     parser.cpp
+    tape.cpp
+    parser.cpp
+    parsestring.cpp
     simdjson.cpp
 )
 

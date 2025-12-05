@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
+#include <sstream>
 
 #include "utils.h"
 #include "parser.h"
@@ -133,9 +134,64 @@ namespace ParaJson {
         if (prev_quote_mask != 0)
             throw std::runtime_error("unclosed quotation marks");
         std::cout << "Number of indices: " << num_indices << "\n";
-        for (size_t i = 0; i < num_indices; ++i) {
-            std::cout << "Index " << i << ": " << indices[i] << " ('" << input[indices[i]] << "')\n";
+        // for (size_t i = 0; i < num_indices; ++i) {
+        //     std::cout << "Index " << i << ": " << indices[i] << " ('" << input[indices[i]] << "')\n";
+        // }
+    }
+
+    void __error_maybe_escape(char *context, size_t *length, char ch) {
+        if (ch == '\0') {
+            context[(*length)++] = '"';
+        } else if (ch == '\t' || ch == '\n' || ch == '\b') {
+            context[(*length)++] = '\\';
+            switch (ch) {
+                case '\t':
+                    context[(*length)++] = 't';
+                    break;
+                case '\n':
+                    context[(*length)++] = 'n';
+                    break;
+                case '\b':
+                    context[(*length)++] = 'b';
+                    break;
+                default:
+                    break;
+            }
+        } else {
+            context[(*length)++] = ch;
         }
+    }
+
+    [[noreturn]] void __error(const std::string &message, const char *input, size_t offset) {
+        static const size_t context_len = 20;
+        char *context = new char[(2 * context_len + 1) * 4];  // add space for escaped chars
+        size_t length = 0;
+        if (offset > context_len) {
+            context[0] = context[1] = context[2] = '.';
+            length = 3;
+        }
+        for (size_t i = offset > context_len ? offset - context_len : 0U; i < offset; ++i)
+            __error_maybe_escape(context, &length, input[i]);
+        size_t left = length;
+        bool end = false;
+        for (size_t i = offset; i < offset + context_len; ++i) {
+            if (input[i] == '\0') {
+                end = true;
+                break;
+            }
+            __error_maybe_escape(context, &length, input[i]);
+        }
+        if (!end) {
+            context[length] = context[length + 1] = context[length + 2] = '.';
+            length += 3;
+        }
+        context[length] = 0;
+        std::stringstream stream;
+        stream << message << std::endl;
+        stream << "context: " << context << std::endl;
+        delete[] context;
+        stream << "         " << std::string(left, ' ') << "^";
+        throw std::runtime_error(stream.str());
     }
 
     JSON::~JSON() {
