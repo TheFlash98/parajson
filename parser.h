@@ -3,7 +3,12 @@
 
 #include <cstdint>
 #include <iostream>
+<<<<<<< HEAD
 #include <immintrin.h>
+=======
+#include <parlay/sequence.h>
+#include <parlay/primitives.h>
+>>>>>>> dca8e49 (add: stage 1 parlay)
 
 namespace ParaJson {
 
@@ -29,8 +34,18 @@ namespace ParaJson {
         return __cmpeq_mask(raw.hi, raw.lo, c);
     }
 
+<<<<<<< HEAD
     void __error_maybe_escape(char *context, size_t *length, char ch);
     [[noreturn]] void __error(const std::string &message, const char *input, size_t offset);
+=======
+    inline parlay::sequence<bool> __cmpeq_mask_parlay(char* input, size_t input_size, char c) {
+       parlay::sequence<bool> result = parlay::tabulate(input_size, [&](size_t i) {
+           return (input[i] == c);
+       });
+       return result;
+    }
+
+>>>>>>> dca8e49 (add: stage 1 parlay)
 
     class JSON {
     public:
@@ -40,6 +55,7 @@ namespace ParaJson {
         const size_t *idx_ptr;
 
         void exec_stage_1();
+        void exec_stage_1_parlay();
         
         JSON(char *document, size_t size);
         ~JSON();

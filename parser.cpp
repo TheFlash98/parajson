@@ -103,7 +103,161 @@ namespace ParaJson {
 
         idx_ptr = indices = aligned_malloc<size_t>(size);
         num_indices = 0;
+<<<<<<< HEAD
+=======
+
+        if (!manual_construct) {
+            // exec_stage_1();
+            exec_stage_1_parlay();
+        }
+>>>>>>> dca8e49 (add: stage 1 parlay)
     }
+
+    void print_mask(parlay::sequence<bool> mask) {
+        for (size_t i = 0; i < mask.size(); ++i) {
+            printf("%d", mask[i]);
+        }
+        printf("\n");
+    }
+
+    void print_mask(parlay::sequence<uint32_t> mask) {
+        for (size_t i = 0; i < mask.size(); ++i) {
+            printf("%d", mask[i]);
+        }
+        printf("\n");
+    }
+
+    void print_mask(parlay::sequence<int> mask) {
+        for (size_t i = 0; i < mask.size(); ++i) {
+            printf("%d", mask[i]);
+        }
+        printf("\n");
+    }
+
+    inline bool is_structural_char(char c) {
+        return c == '{' || c == '}' || c == '[' || c == ']' || 
+            c == ':' || c == ',';
+    }
+
+    void JSON::exec_stage_1_parlay() {        
+        // Compute backslash masks in parallel
+        // printf("Computing backslash masks using parlay for len %i\n", input_len);
+        // parlay::sequence<bool> backslash_mask_seq = __cmpeq_mask_parlay(input, input_len, '\\');
+        // parlay::sequence<uint32_t> last_run_start = parlay::tabulate(input_len, [&](size_t i) {
+        //     if (input[i] == '\\') {
+        //         if (i == 0 || input[i - 1] != '\\') {
+        //             return static_cast<uint32_t>(i);
+        //         } else {
+        //             return 0U;
+        //         }
+        //     } else {
+        //         return 0U;
+        //     }
+        // });
+        // // print_mask(last_run_start);
+        // auto op = [](uint32_t a, uint32_t b) {
+        //     return b > 0 ? b : a;
+        // };
+        // // Inclusive scan (probably what you want)
+        // auto prefix_sum = parlay::scan(
+        //     last_run_start, parlay::binary_op(op, 0)
+        // );        
+        // auto escape_mask_seq = parlay::tabulate(input_len, [&](size_t i) {
+        //     if (i == 0) {
+        //         return false;
+        //     }
+        //     uint32_t last_start = prefix_sum.first[i];
+        //     if (backslash_mask_seq[i-1]) {
+        //         size_t run_length = i - last_start + 1;
+        //         return (run_length % 2 == 0);
+        //     } else {
+        //         return false;
+        //     }
+        // });
+        // print_mask(escape_mask_sseq);
+        
+        // Identify backslashes
+        // parlay::sequence<bool> backslash_mask_seq = __cmpeq_mask_parlay(input, input_len, '\\');
+
+        // Count consecutive backslashes ending at each position
+        parlay::sequence<uint8_t> backslash_counts = parlay::tabulate(input_len, [&](size_t i) {
+            return (input[i] == '\\') ? uint8_t(1) : uint8_t(0);
+        });
+        // But the scan result still needs to be uint32_t
+        auto op = parlay::binary_op([](uint32_t a, uint32_t b) { return b > 0 ? a + b : 0U; }, 0U);
+        auto counts = parlay::scan_inclusive(
+            backslash_counts, 
+            op   
+        );
+        // print_mask(counts);
+        // A character is escaped if preceded by an odd number of backslashes
+        auto escape_mask_seq = parlay::tabulate(input_len, [&](size_t i) {
+            return (i > 0) && (counts[i-1] % 2 == 1);
+        });
+        // print_mask(escape_mask_seq);
+        // auto true_quote_mask_seq = parlay::tabulate(input_len, [&](size_t i) {
+        //     return (input[i] == '"') && !escape_mask_seq[i];
+        // });
+        // print_mask(true_quote_mask_seq);
+        // auto op2 = parlay::binary_op([](uint32_t a, bool b) { return a + (b ? 1U : 0U); }, 0U);
+        // auto quote_count = parlay::scan(true_quote_mask_seq, op2);
+        // print_mask(quote_count.first);
+        // auto literal_mask_seq = parlay::tabulate(input_len, [&](size_t i) {
+        //     if (true_quote_mask_seq[i]) {
+        //         return (quote_count.first[i] % 2 == 0);
+        //     }
+        //     return (quote_count.first[i] % 2 == 1);
+        // });
+        // print_mask(literal_mask_seq);
+        auto literal_mask_seq = parlay::scan_inclusive(
+            parlay::delayed_tabulate(input_len, [&](size_t i) {
+                return (input[i] == '"' && !escape_mask_seq[i]) ? 1U : 0U;
+            }),
+            parlay::binary_op([](uint32_t a, uint32_t b) { 
+                return (a + b) % 2; 
+            }, 0U)
+        );
+        // print_mask(literal_mask_seq);
+        parlay::sequence<bool> whitespace_mask_seq = parlay::tabulate(input_len, [&](size_t i) {
+            char c = input[i];
+            return c == ' ' || c == '\n' || c == '\r' || c == '\t';
+        });
+        parlay::sequence<bool> quote_mask_seq = parlay::tabulate(input_len, [&](size_t i) {
+            return input[i] == '"';
+        });
+        // print_mask(quote_mask_seq);
+        auto structural_mask = parlay::tabulate(input_len, [&](size_t i) {
+            bool is_struct = is_structural_char(input[i]) && !literal_mask_seq[i];
+            bool is_ws = whitespace_mask_seq[i] && !literal_mask_seq[i];
+            bool is_quote = quote_mask_seq[i] && !escape_mask_seq[i];
+            bool in_literal = literal_mask_seq[i];
+
+            bool p = is_struct || is_ws || is_quote;
+            is_struct = is_struct || is_quote;
+            bool is_struct_prev = (i > 0) ? is_structural_char(input[i-1]) && !literal_mask_seq[i-1] : p;
+            bool is_ws_prev = (i > 0) ? whitespace_mask_seq[i-1] && !literal_mask_seq[i-1] : p;
+            bool is_quote_prev = (i > 0) ? quote_mask_seq[i-1] && !escape_mask_seq[i-1] : p;
+            bool prev_p = is_struct_prev || is_ws_prev || is_quote_prev;
+            bool is_candidate = (i > 0) ? prev_p || whitespace_mask_seq[i-1] : p;
+            
+            is_candidate = is_candidate && !is_ws && !in_literal;
+            is_struct = is_struct || is_candidate;
+            is_struct = is_struct && !(is_quote && !in_literal);
+            return is_struct;
+        });
+        auto indices_parlay = parlay::pack_index<uint32_t>(
+            parlay::delayed_tabulate(input_len, [&](size_t i) {
+                return structural_mask[i];
+            })
+        );
+        num_indices = indices_parlay.size() + 1;  // +1 for null terminator
+        this->indices = aligned_malloc<size_t>(num_indices);
+        parlay::parallel_for(0, indices_parlay.size(), [&](size_t i) {
+            this->indices[i] = indices_parlay[i];
+        });
+        this->indices[num_indices - 1] = input_len;  // null terminator
+        
+    }   
 
     void JSON::exec_stage_1() {
         uint32_t prev_escape_mask = 0;
