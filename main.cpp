@@ -104,10 +104,14 @@ int main(int argc, char **argv) {
 
     auto warmup_start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < warmups; ++i) {
-        std::cout << "--------------------------------------------------\n";
-        std::cout << "Warmup " << i + 1 << "\n";
-        std::cout << "--------------------------------------------------\n";
-        impl == SIMD ? simd_parse(input_path) : parajson_parse(input_path, i == 0);
+        if (impl == SIMD) {
+            simd_parse(input_path);
+        } else {
+            std::cout << "--------------------------------------------------\n";
+            std::cout << "Warmup " << i + 1 << "\n";
+            std::cout << "--------------------------------------------------\n";
+            parajson_parse(input_path, i == 0);
+        }
     }
     auto warmup_end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> warmup_diff = warmup_end - warmup_start;
@@ -120,10 +124,14 @@ int main(int argc, char **argv) {
     stage_2_time = 0.0;
     auto iterations_start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < num_iterations; ++i) {
-        std::cout << "--------------------------------------------------\n";
-        std::cout << "Iteration " << i + 1 << "\n";
-        std::cout << "--------------------------------------------------\n";
-        impl == SIMD ? simd_parse(input_path) : parajson_parse(input_path);
+        if (impl == SIMD) {
+            simd_parse(input_path);
+        } else {
+            std::cout << "--------------------------------------------------\n";
+            std::cout << "Iteration " << i + 1 << "\n";
+            std::cout << "--------------------------------------------------\n";
+            parajson_parse(input_path, i == 0);
+        }
     }
 
     auto iterations_end = std::chrono::high_resolution_clock::now();
