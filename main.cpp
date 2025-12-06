@@ -35,7 +35,7 @@ void parajson_parse(char *input_path, bool verbose=false) {
     ParaJson::Tape tape(size, size);
 
     auto stage_1_start = std::chrono::high_resolution_clock::now();
-    json.exec_stage_1();
+    json.exec_stage_1_parlay();
     auto stage_1_end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> stage_1_diff = stage_1_end - stage_1_start;
     stage_1_time += stage_1_diff.count();

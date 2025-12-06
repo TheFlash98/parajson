@@ -103,14 +103,6 @@ namespace ParaJson {
 
         idx_ptr = indices = aligned_malloc<size_t>(size);
         num_indices = 0;
-<<<<<<< HEAD
-=======
-
-        if (!manual_construct) {
-            // exec_stage_1();
-            exec_stage_1_parlay();
-        }
->>>>>>> dca8e49 (add: stage 1 parlay)
     }
 
     void print_mask(parlay::sequence<bool> mask) {
