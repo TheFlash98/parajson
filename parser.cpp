@@ -96,17 +96,13 @@ namespace ParaJson {
         return structural_mask;
     }
 
-    JSON::JSON(char *document, size_t size, bool manual_construct) {
+    JSON::JSON(char *document, size_t size) {
         input = document;
         input_len = size;
         // this->document = nullptr;
 
         idx_ptr = indices = aligned_malloc<size_t>(size);
         num_indices = 0;
-
-        if (!manual_construct) {
-            exec_stage_1();
-        }
     }
 
     void JSON::exec_stage_1() {
@@ -133,7 +129,6 @@ namespace ParaJson {
             indices[num_indices++] = offset - 32 + strlen(input + offset - 32);
         if (prev_quote_mask != 0)
             throw std::runtime_error("unclosed quotation marks");
-        std::cout << "Number of indices: " << num_indices << "\n";
         // for (size_t i = 0; i < num_indices; ++i) {
         //     std::cout << "Index " << i << ": " << indices[i] << " ('" << input[indices[i]] << "')\n";
         // }

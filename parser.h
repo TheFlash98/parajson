@@ -41,7 +41,7 @@ namespace ParaJson {
 
         void exec_stage_1();
         
-        JSON(char *document, size_t size, bool manual_construct = false);
+        JSON(char *document, size_t size);
         ~JSON();
     };
 }

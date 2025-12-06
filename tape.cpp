@@ -39,7 +39,7 @@ namespace ParaJson {
 
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> diff = end - start;
-        std::cout << "String parsing time: " << diff.count() << " s\n";
+        // std::cout << "String parsing time: " << diff.count() << " s\n";
         literals = input;
     }
 }
