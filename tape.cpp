@@ -519,7 +519,7 @@ succeed:
 
         size_t num_chunks = (structural_size + chunk_size - 1) / chunk_size;
         std::cout << "num_chunks: " << num_chunks << std::endl;
-        TapeStack stack[num_chunks];
+        TapeStack* stack = new TapeStack[num_chunks];
         size_t tape_ends[num_chunks];
         size_t idx_splits[num_chunks + 1];
 
@@ -601,6 +601,8 @@ succeed:
         // parlay::parallel_for(0, structural_size, [&](int i) {
         //     Tape::_thread_parse_num_parlay(i, input, idx_ptr);
         // });
+
+        delete[] stack;
         
         print_tape();
         print_json();
