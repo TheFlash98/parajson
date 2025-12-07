@@ -399,14 +399,15 @@ succeed:
                 printf("[");
                 assert((section & VALUE_MASK) > tape_idx);
                 while (elem_idx < (section & VALUE_MASK)) {
-                    if (first) first = false; else printf(",");
-                    printf("\n");
-                    print_indent(indent + 2);
-                    elem_idx += print_json(elem_idx, indent + 2);
                     if ((tape[elem_idx] & TYPE_MASK) == TYPE_JUMP) {
                         // Skip jumps at the end of each value.
                         // Otherwise, this case will fail:  [ value JUMP ]
                         elem_idx += tape[elem_idx] & VALUE_MASK;
+                    } else {
+                        if (first) first = false; else printf(",");
+                        printf("\n");
+                        print_indent(indent + 2);
+                        elem_idx += print_json(elem_idx, indent + 2);
                     }
                 }
                 assert(elem_idx == (section & VALUE_MASK) && tape_idx == (tape[elem_idx] & VALUE_MASK)
@@ -422,16 +423,17 @@ succeed:
                 printf("{");
                 assert((section & VALUE_MASK) > tape_idx);
                 while (elem_idx < (section & VALUE_MASK)) {
-                    if (first) first = false; else printf(",");
-                    printf("\n");
-                    print_indent(indent + 2);
-                    elem_idx += print_json(elem_idx, indent + 2);
-                    printf(": ");
-                    elem_idx += print_json(elem_idx, indent + 2);
                     if ((tape[elem_idx] & TYPE_MASK) == TYPE_JUMP) {
                         // Skip jumps at the end of each value.
                         // Otherwise, this case will fail:  { str : value JUMP }
                         elem_idx += tape[elem_idx] & VALUE_MASK;
+                    } else {
+                        if (first) first = false; else printf(",");
+                        printf("\n");
+                        print_indent(indent + 2);
+                        elem_idx += print_json(elem_idx, indent + 2);
+                        printf(": ");
+                        elem_idx += print_json(elem_idx, indent + 2);
                     }
                 }
                 assert(elem_idx == (section & VALUE_MASK) && tape_idx == (tape[elem_idx] & VALUE_MASK)
