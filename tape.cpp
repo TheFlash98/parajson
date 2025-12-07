@@ -235,17 +235,14 @@ namespace ParaJson {
 
 
 start_value:
-        std::cout << "At start_value" << std::endl;
         next_char();
         PARSE_VALUE(&&start_continue);
         goto succeed;
 start_continue:
 //        next_char();  // strip off the extra closing bracket at end
-        std::cout << "At start_continue" << std::endl;
         goto succeed;
 
 unknown_start:
-        std::cout << "At unknown_start" << std::endl;
         next_char();
         switch (ch) {
             case '"':
@@ -266,7 +263,6 @@ unknown_start:
                 PARSE_VALUE(&&unknown_continue);
         }
 unknown_continue:
-        std::cout << "At unknown_continue" << std::endl;
         next_char();
         switch (ch) {
             case ',':
@@ -279,7 +275,6 @@ unknown_continue:
                 goto fail;
         }
 unknown_2nd_value:
-        std::cout << "At unknown_2nd_value" << std::endl;
         next_char();
         if (ch == '"') {
             write_str(tape_pos++, _parse_str(input, idx));
@@ -291,7 +286,6 @@ unknown_2nd_value:
         }
 
 object_begin:
-        std::cout << "At object_begin" << std::endl;
         next_char();
         switch (ch) {
             case '"':
@@ -303,13 +297,11 @@ object_begin:
                 goto fail;
         }
 object_key_state:
-        std::cout << "At object_key_state" << std::endl;
         next_char();
         expect(':');
         next_char();
         PARSE_VALUE(&&object_continue);
 object_continue:
-        std::cout << "At object_continue" << std::endl;
         next_char();
         switch (ch) {
             case ',':
@@ -323,8 +315,6 @@ object_continue:
                 goto fail;
         }
 object_end:
-        std::cout << "At object_end" << std::endl;
-        std::cout << "Stack Depth: " << stack->depth << std::endl;
         if (stack->depth == 0) {
             // Extra closing curly bracket in current segment.
             stack->extra_closing_offset[stack->extra_closing_count++] = tape_pos;
@@ -343,14 +333,11 @@ object_end:
         }
 
 array_begin:
-        std::cout << "At array_begin" << std::endl;
         next_char();
         if (ch == ']') goto array_end;
 array_value:
-        std::cout << "At array_value" << std::endl;
         PARSE_VALUE(&&array_continue);
 array_continue:
-        std::cout << "At array_continue" << std::endl;
         next_char();
         switch (ch) {
             case ',':
@@ -362,8 +349,6 @@ array_continue:
                 goto fail;
         }
 array_end:
-        std::cout << "At array_end" << std::endl;
-        std::cout << "Stack Depth: " << stack->depth << std::endl;
         if (stack->depth == 0) {
             // Extra closing square bracket in current segment.
             stack->extra_closing_offset[stack->extra_closing_count++] = tape_pos;
@@ -382,15 +367,91 @@ array_end:
         }
 
 fail:
-        std::cout << "At fail" << std::endl;
         ParaJson::__error("unexpected character when parsing value", input, idx);
 succeed:
-        std::cout << "At succeed" << std::endl;
         if (idx_offset != idx_end) ParaJson::__error("excessive characters at end of input", input, idx);
         *tape_end = tape_pos;
 
 #undef next_char
 #undef PARSE_VALUE
+    }
+
+    size_t Tape::print_json(size_t tape_idx, size_t indent) {
+        uint64_t section = tape[tape_idx];
+        switch (section & TYPE_MASK) {
+            case TYPE_NULL:
+                printf("null");
+                return 1;
+            case TYPE_FALSE:
+                printf("false");
+                return 1;
+            case TYPE_TRUE:
+                printf("true");
+                return 1;
+            case TYPE_STR:
+                printf("\"%s\"", literals + (section & VALUE_MASK));
+                return 1;
+            case TYPE_INT:
+                printf("%lld", static_cast<long long int>(numeric[section & VALUE_MASK]));
+                return 1;
+            case TYPE_DEC:
+                printf("%.10lf", plain_convert(static_cast<long long int>(numeric[section & VALUE_MASK])));
+                return 1;
+            case TYPE_ARR: {
+                size_t elem_idx = tape_idx + 1;
+                bool first = true;
+                printf("[");
+                assert((section & VALUE_MASK) > tape_idx);
+                while (elem_idx < (section & VALUE_MASK)) {
+                    if (first) first = false; else printf(",");
+                    printf("\n");
+                    print_indent(indent + 2);
+                    elem_idx += print_json(elem_idx, indent + 2);
+                    if ((tape[elem_idx] & TYPE_MASK) == TYPE_JUMP) {
+                        // Skip jumps at the end of each value.
+                        // Otherwise, this case will fail:  [ value JUMP ]
+                        elem_idx += tape[elem_idx] & VALUE_MASK;
+                    }
+                }
+                assert(elem_idx == (section & VALUE_MASK) && tape_idx == (tape[elem_idx] & VALUE_MASK)
+                       && (tape[elem_idx] & TYPE_MASK) == TYPE_ARR);
+                printf("\n");
+                print_indent(indent);
+                printf("]");
+                return elem_idx + 1 - tape_idx;
+            }
+            case TYPE_OBJ: {
+                size_t elem_idx = tape_idx + 1;
+                bool first = true;
+                printf("{");
+                assert((section & VALUE_MASK) > tape_idx);
+                while (elem_idx < (section & VALUE_MASK)) {
+                    if (first) first = false; else printf(",");
+                    printf("\n");
+                    print_indent(indent + 2);
+                    elem_idx += print_json(elem_idx, indent + 2);
+                    printf(": ");
+                    elem_idx += print_json(elem_idx, indent + 2);
+                    if ((tape[elem_idx] & TYPE_MASK) == TYPE_JUMP) {
+                        // Skip jumps at the end of each value.
+                        // Otherwise, this case will fail:  { str : value JUMP }
+                        elem_idx += tape[elem_idx] & VALUE_MASK;
+                    }
+                }
+                assert(elem_idx == (section & VALUE_MASK) && tape_idx == (tape[elem_idx] & VALUE_MASK)
+                       && (tape[elem_idx] & TYPE_MASK) == TYPE_OBJ);
+                printf("\n");
+                print_indent(indent);
+                printf("}");
+                return elem_idx + 1 - tape_idx;
+            }
+            case TYPE_JUMP: {
+                size_t offset = (section & VALUE_MASK);
+                return print_json(tape_idx + offset, indent) + offset;
+            }
+            default:
+                throw std::runtime_error("unexpected element on tape");
+        }
     }
 
     void Tape::print_tape() {
@@ -543,7 +604,7 @@ succeed:
         // });
         
         print_tape();
-//        print_json();
+        print_json();
 //        printf("\n");
     }
 }

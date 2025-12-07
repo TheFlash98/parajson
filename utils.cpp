@@ -27,6 +27,12 @@ char *read_file(const char *filename, size_t *size) {
     return buffer;
 }
 
+void print_indent(int indent) {
+    if (indent > 0) {
+        std::cout << std::string(indent, ' ');
+    }
+}
+
 double plain_convert(long long int value) {
     union { long long int integer; double decimal; };
     integer = value; return decimal;

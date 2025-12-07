@@ -21,54 +21,42 @@ namespace ParaJson {
         size_t tape_size, literals_size, numeric_size;
 
         inline void write_true(size_t offset) {
-            std::cout << "Write true at offset: " << offset << std::endl;
             tape[offset] = TYPE_TRUE;
         }
         inline void write_false(size_t offset) {
-            std::cout << "Write false at offset: " << offset << std::endl;
             tape[offset] = TYPE_FALSE;
         }
         inline void write_null(size_t offset) {
-            std::cout << "Write null at offset: " << offset << std::endl;
             tape[offset] = TYPE_NULL;
         }
         inline void write_str(size_t offset, uint64_t literal_idx) {
-            std::cout << "Write str at offset: " << offset << " with literal_idx: " << literal_idx << std::endl;
             tape[offset] = TYPE_STR | literal_idx;
         }
         inline void write_object(size_t offset) {
-            std::cout << "Write object at offset: " << offset << std::endl;
             tape[offset] = TYPE_OBJ;
         }
         inline void write_object(size_t idx1, size_t idx2) {
-            std::cout << "Write objects at idx1: " << idx1 << " and idx2: " << idx2 << std::endl;
             tape[idx1] = TYPE_OBJ | idx2;
             tape[idx2] = TYPE_OBJ | idx1;
         }
         inline void write_array(size_t idx1, size_t idx2) {
-            std::cout << "Write arrays at idx1: " << idx1 << " and idx2: " << idx2 << std::endl;
             tape[idx1] = TYPE_ARR | idx2;
             tape[idx2] = TYPE_ARR | idx1;
         }
         inline size_t write_array() {
-            std::cout << "Write array" << std::endl;
             write_array(tape_size);
             return tape_size++;
         }
         inline void write_array(size_t offset) {
-            std::cout << "Write array at offset: " << offset << std::endl;
             tape[offset] = TYPE_ARR;
         }
         inline void write_jump(size_t offset, size_t dest) {
-            std::cout << "Write jump at offset: " << offset << " with dest: " << dest << std::endl;
             tape[offset] = TYPE_JUMP | (dest - offset);
         }
         inline void write_content(size_t offset, uint64_t content) {
-            std::cout << "Write content at offset: " << offset << " with content: " << content << std::endl;
             tape[offset] = (tape[offset] & TYPE_MASK) | content;
         }
         inline void append_content(size_t offset, uint64_t content) {
-            std::cout << "Append content at offset: " << offset << " with content: " << content << std::endl;
             tape[offset] |= content;
         }
 
@@ -110,6 +98,7 @@ namespace ParaJson {
         friend class TapeWriter;
 
         void state_machine(char *input, size_t *idx_ptr, size_t structural_size, int chunk_size);
+        size_t print_json(size_t tape_idx = 0, size_t indent = 0);
         void print_tape();
     };
 
