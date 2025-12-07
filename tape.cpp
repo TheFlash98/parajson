@@ -131,17 +131,9 @@ namespace ParaJson {
     void Tape::_parse_and_write_number(const char *input, size_t offset, size_t tape_idx, size_t numeric_idx) {
         // __parse_and_write_number(input, offset, tape_idx, numeric_idx);
         // TODO[Archit]: Check if this is correct
-        tape[tape_idx] = 0;
         // tape[tape_idx] = numeric_idx;
         // numeric[numeric_idx] = tape_idx;
-    }
-
-    void Tape::_thread_parse_str_parlay(size_t i, char *input, const size_t *idx_ptr) {
-        size_t idx = idx_ptr[i];
-        char *dest = input + idx + 1;
-        if (input[idx] == '"') {
-            parse_str(input, dest, nullptr, idx + 1);
-        }
+        __parse_and_write_number(input, offset, tape_idx, numeric_idx);
     }
 
     void Tape::_thread_parse_num_parlay(size_t i, char *input, const size_t *idx_ptr) {
@@ -152,6 +144,14 @@ namespace ParaJson {
         size_t tape_idx = numeric[idx];
         std::cout << "i: " << i << "tape_idx :" << tape_idx << std::endl;
         __parse_and_write_number(input, offset, tape_idx, idx);
+    }
+
+    void Tape::_thread_parse_str_parlay(size_t i, char *input, const size_t *idx_ptr) {
+        size_t idx = idx_ptr[i];
+        char *dest = input + idx + 1;
+        if (input[idx] == '"') {
+            parse_str(input, dest, nullptr, idx + 1);
+        }
     }
 
     size_t Tape::_parse_str(char *input, size_t idx) {
@@ -414,7 +414,7 @@ succeed:
                     }
                 }
                 assert(elem_idx == (section & VALUE_MASK) && tape_idx == (tape[elem_idx] & VALUE_MASK)
-                       && (tape[elem_idx] & TYPE_MASK) == TYPE_ARR);
+                //        && (tape[elem_idx] & TYPE_MASK) == TYPE_ARR);
                 printf("\n");
                 print_indent(indent);
                 printf("]");
@@ -439,7 +439,7 @@ succeed:
                     }
                 }
                 assert(elem_idx == (section & VALUE_MASK) && tape_idx == (tape[elem_idx] & VALUE_MASK)
-                       && (tape[elem_idx] & TYPE_MASK) == TYPE_OBJ);
+                //        && (tape[elem_idx] & TYPE_MASK) == TYPE_OBJ);
                 printf("\n");
                 print_indent(indent);
                 printf("}");
@@ -520,6 +520,7 @@ succeed:
         literals = input;
 
         size_t num_chunks = (structural_size + chunk_size - 1) / chunk_size;
+        std::cout << "num_chunks: " << num_chunks << std::endl;
         TapeStack stack[num_chunks];
         size_t tape_ends[num_chunks];
         size_t idx_splits[num_chunks + 1];

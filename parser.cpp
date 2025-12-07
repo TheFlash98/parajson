@@ -309,72 +309,69 @@ namespace ParaJson {
     }
 
     long long int parse_number(const char *input, bool *is_decimal, size_t offset) {
-        *is_decimal = false;
-        return 0LL;
-
-        // const char *s = input + offset;
-        // long long int integer = 0LL;
-        // double decimal = 0.0;
-        // bool negative = false, _is_decimal = false;
-        // if (*s == '-') {
-        //     ++s;
-        //     negative = true;
-        // }
-        // if (*s == '0') {
-        //     ++s;
-        //     if (*s >= '0' && *s <= '9')
-        //         __error("numbers cannot have leading zeros", input, offset);
-        // } else {
-        //     if (*s < '0' || *s > '9')
-        //         ParaJson::__error("numbers must have integer parts", input, offset);
-        //     while (*s >= '0' && *s <= '9')
-        //         integer = integer * 10 + (*s++ - '0');
-        // }
-        // if (s - input - offset > 18)
-        //     __error("integer part too large", input, offset);
-        // if (*s == '.') {
-        //     _is_decimal = true;
-        //     decimal = integer;
-        //     double multiplier = 0.1;
-        //     ++s;
-        //     while (*s >= '0' && *s <= '9') {
-        //         decimal += (*s++ - '0') * multiplier;
-        //         multiplier *= 0.1;
-        //     }if (multiplier == 0.1)
-        //         __error("excessive characters at end of number", input, s - input - 1);
-        // }
-        // if (*s == 'e' || *s == 'E') {
-        //     if (!_is_decimal) {
-        //         _is_decimal = true;
-        //         decimal = integer;
-        //     }
-        //     ++s;
-        //     bool negative_exp = false;
-        //     if (*s == '-') {
-        //         negative_exp = true;
-        //         ++s;
-        //     } else if (*s == '+') ++s;
-        //     double exponent = 0.0;
-        //     if (*s < '0' || *s > '9')
-        //         ParaJson::__error("numbers must not have null exponents", input, s - input);
-        //     do {
-        //         exponent = exponent * 10.0 + (*s++ - '0');
-        //     } while (*s >= '0' && *s <= '9');
-        //     if (negative_exp) exponent = -exponent;
-        //     if (exponent < -308 || exponent > 308)
-        //         __error("decimal exponent out of range", input, offset);
-        //     decimal *= pow(10.0, exponent);
-        // }
-        // if (!kStructuralOrWhitespace[*s])
-        //     __error("excessive characters at end of number", input, s - input);
-        // *is_decimal = _is_decimal;
-        // if (negative) {
-        //     if (_is_decimal) return plain_convert(-decimal);
-        //     else return -integer;
-        // } else {
-        //     if (_is_decimal) return plain_convert(decimal);
-        //     else return integer;
-        // }
+        const char *s = input + offset;
+        long long int integer = 0LL;
+        double decimal = 0.0;
+        bool negative = false, _is_decimal = false;
+        if (*s == '-') {
+            ++s;
+            negative = true;
+        }
+        if (*s == '0') {
+            ++s;
+            if (*s >= '0' && *s <= '9')
+                __error("numbers cannot have leading zeros", input, offset);
+        } else {
+            if (*s < '0' || *s > '9')
+                ParaJson::__error("numbers must have integer parts", input, offset);
+            while (*s >= '0' && *s <= '9')
+                integer = integer * 10 + (*s++ - '0');
+        }
+        if (s - input - offset > 18)
+            __error("integer part too large", input, offset);
+        if (*s == '.') {
+            _is_decimal = true;
+            decimal = integer;
+            double multiplier = 0.1;
+            ++s;
+            while (*s >= '0' && *s <= '9') {
+                decimal += (*s++ - '0') * multiplier;
+                multiplier *= 0.1;
+            }if (multiplier == 0.1)
+                __error("excessive characters at end of number", input, s - input - 1);
+        }
+        if (*s == 'e' || *s == 'E') {
+            if (!_is_decimal) {
+                _is_decimal = true;
+                decimal = integer;
+            }
+            ++s;
+            bool negative_exp = false;
+            if (*s == '-') {
+                negative_exp = true;
+                ++s;
+            } else if (*s == '+') ++s;
+            double exponent = 0.0;
+            if (*s < '0' || *s > '9')
+                ParaJson::__error("numbers must not have null exponents", input, s - input);
+            do {
+                exponent = exponent * 10.0 + (*s++ - '0');
+            } while (*s >= '0' && *s <= '9');
+            if (negative_exp) exponent = -exponent;
+            if (exponent < -308 || exponent > 308)
+                __error("decimal exponent out of range", input, offset);
+            decimal *= pow(10.0, exponent);
+        }
+        if (!kStructuralOrWhitespace[*s])
+            __error("excessive characters at end of number", input, s - input);
+        *is_decimal = _is_decimal;
+        if (negative) {
+            if (_is_decimal) return plain_convert(-decimal);
+            else return -integer;
+        } else {
+            if (_is_decimal) return plain_convert(decimal);
+            else return integer;
+        }
     }
 
     bool parse_true(const char *s, size_t offset) {
