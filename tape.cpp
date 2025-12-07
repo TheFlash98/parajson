@@ -129,10 +129,6 @@ namespace ParaJson {
     }
 
     void Tape::_parse_and_write_number(const char *input, size_t offset, size_t tape_idx, size_t numeric_idx) {
-        // __parse_and_write_number(input, offset, tape_idx, numeric_idx);
-        // TODO[Archit]: Check if this is correct
-        // tape[tape_idx] = numeric_idx;
-        // numeric[numeric_idx] = tape_idx;
         __parse_and_write_number(input, offset, tape_idx, numeric_idx);
     }
 
@@ -606,6 +602,6 @@ succeed:
         
         print_tape();
         print_json();
-//        printf("\n");
+        printf("\n");
     }
 }
