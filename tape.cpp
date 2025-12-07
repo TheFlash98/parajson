@@ -508,17 +508,17 @@ succeed:
         return !(__is_opening_bracket(ch) || __is_closing_bracket(ch) || __is_separator(ch));
     }
 
-    void Tape::state_machine(char *input, size_t *idx_ptr, size_t structural_size, int chunk_size) {
-        if (structural_size == 1)
-            __error("emtpy string is not valid JSON", input, 0);
-        
+    void Tape::parse_strings(char *input, size_t *idx_ptr, size_t structural_size) {
         parlay::parallel_for(0, structural_size, [&](int i) {
             Tape::_thread_parse_str_parlay(i, input, idx_ptr);
         });
-        literals = input;
+    }
 
-        size_t num_chunks = (structural_size + chunk_size - 1) / chunk_size;
-        std::cout << "num_chunks: " << num_chunks << std::endl;
+    void Tape::state_machine(char *input, size_t *idx_ptr, size_t structural_size, size_t num_chunks) {
+        if (structural_size == 1)
+            __error("emtpy string is not valid JSON", input, 0);
+
+        literals = input;
         TapeStack* stack = new TapeStack[num_chunks];
         size_t tape_ends[num_chunks];
         size_t idx_splits[num_chunks + 1];
@@ -592,20 +592,25 @@ succeed:
         if (top > 0) throw std::runtime_error("unmatched opening brackets");
         if (size_t pos = idx_ptr[idx_splits[num_chunks] - 1]; input[pos] == ',')
             ParaJson::__error("extra separator", input, pos);
-        for (int i = 0; i < num_chunks - 1; ++i) {
+
+        parlay::parallel_for(0, num_chunks - 1, [&](int i) {
             size_t idx_begin_next = idx_splits[i + 1];
             if (tape_ends[i] < idx_begin_next) write_jump(tape_ends[i], idx_begin_next);
-        }
+        });
+
         tape_size = tape_ends[num_chunks - 1];
 
-        // parlay::parallel_for(0, structural_size, [&](int i) {
-        //     Tape::_thread_parse_num_parlay(i, input, idx_ptr);
-        // });
-
         delete[] stack;
-        
-        print_tape();
-        print_json();
-        printf("\n");
+    }
+
+    void Tape::run_state_machine(char *input, size_t *idx_ptr, size_t structural_size, size_t num_chunks) {
+        parlay::par_do(
+            [&]() { Tape::parse_strings(input, idx_ptr, structural_size); },
+            [&]() { Tape::state_machine(input, idx_ptr, structural_size, num_chunks); }
+        );
+
+        // print_tape();
+        // print_json();
+        // printf("\n");
     }
 }

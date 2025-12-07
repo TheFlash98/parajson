@@ -44,12 +44,15 @@ void parajson_parse(char *input_path, bool verbose=false) {
     if (verbose)
         std::cout << "Number of indices: " << json.num_indices << "\n";
     
+    size_t num_chunks = (json.num_indices + chunk_size - 1) / chunk_size;
     auto stage_2_start = std::chrono::high_resolution_clock::now();
-    tape.state_machine(const_cast<char *>(json.input), json.indices, json.num_indices, chunk_size);
+    tape.run_state_machine(const_cast<char *>(json.input), json.indices, json.num_indices, num_chunks);
     auto stage_2_end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> stage_2_diff = stage_2_end - stage_2_start;
     stage_2_time += stage_2_diff.count();
-
+    
+    if (verbose)
+        std::cout << "Number of Chunks: " << num_chunks << std::endl;
     std::cout << "Stage 1 Time: " << stage_1_diff.count() << " s\n";
     std::cout << "Stage 2 Time: " << stage_2_diff.count() << " s\n\n";
 }

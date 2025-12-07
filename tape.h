@@ -70,6 +70,8 @@ namespace ParaJson {
         size_t _parse_str(char *input, size_t idx);
         void _thread_state_machine(char *input, const size_t *indices, size_t idx_begin, size_t idx_end,
                                    struct TapeStack *stack, size_t *tape_end, bool start_unknown = false);
+        
+        void parse_strings(char *input, size_t *idx_ptr, size_t structural_size);
 
     public:
 
@@ -97,7 +99,8 @@ namespace ParaJson {
 
         friend class TapeWriter;
 
-        void state_machine(char *input, size_t *idx_ptr, size_t structural_size, int chunk_size);
+        void state_machine(char *input, size_t *idx_ptr, size_t structural_size, size_t num_chunks);
+        void run_state_machine(char *input, size_t *idx_ptr, size_t structural_size, size_t num_chunks);
         size_t print_json(size_t tape_idx = 0, size_t indent = 0);
         void print_tape();
     };
