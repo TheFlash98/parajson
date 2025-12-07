@@ -414,7 +414,7 @@ succeed:
                     }
                 }
                 assert(elem_idx == (section & VALUE_MASK) && tape_idx == (tape[elem_idx] & VALUE_MASK)
-                //        && (tape[elem_idx] & TYPE_MASK) == TYPE_ARR);
+                       && (tape[elem_idx] & TYPE_MASK) == TYPE_ARR);
                 printf("\n");
                 print_indent(indent);
                 printf("]");
@@ -439,7 +439,7 @@ succeed:
                     }
                 }
                 assert(elem_idx == (section & VALUE_MASK) && tape_idx == (tape[elem_idx] & VALUE_MASK)
-                //        && (tape[elem_idx] & TYPE_MASK) == TYPE_OBJ);
+                       && (tape[elem_idx] & TYPE_MASK) == TYPE_OBJ);
                 printf("\n");
                 print_indent(indent);
                 printf("}");
