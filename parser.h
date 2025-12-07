@@ -54,6 +54,11 @@ namespace ParaJson {
         JSON(char *document, size_t size);
         ~JSON();
     };
+
+    bool parse_true(const char *s, size_t offset = 0U);
+    bool parse_false(const char *s, size_t offset = 0U);
+    void parse_null(const char *s, size_t offset = 0U);
+    long long int parse_number(const char *s, bool *is_decimal, size_t offset = 0U);
 }
 
 

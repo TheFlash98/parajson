@@ -12,6 +12,7 @@
 
 double stage_1_time = 0.0;
 double stage_2_time = 0.0;
+int chunk_size = 1024;
 
 void simd_parse(char *input_path) {
     simdjson::ondemand::parser parser;
@@ -44,7 +45,7 @@ void parajson_parse(char *input_path, bool verbose=false) {
         std::cout << "Number of indices: " << json.num_indices << "\n";
     
     auto stage_2_start = std::chrono::high_resolution_clock::now();
-    tape.state_machine(const_cast<char *>(json.input), json.indices, json.num_indices);
+    tape.state_machine(const_cast<char *>(json.input), json.indices, json.num_indices, chunk_size);
     auto stage_2_end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> stage_2_diff = stage_2_end - stage_2_start;
     stage_2_time += stage_2_diff.count();
@@ -67,10 +68,11 @@ int main(int argc, char **argv) {
         {"file", required_argument, NULL, 'f'},
         {"repeats", required_argument, NULL, 'r'},
         {"warmups", required_argument, NULL, 'w'},
+        {"chunk_size", required_argument, NULL, 'c'},
         {NULL, 0, NULL, 0}
     };
 
-    while ((c = getopt_long(argc, argv, "i:f:r:w:", long_options, &option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "i:f:r:w:c:", long_options, &option_index)) != -1) {
         switch (c) {
             case 'i':
                 if (strcmp(optarg, "simd") == 0) {
@@ -91,6 +93,9 @@ int main(int argc, char **argv) {
                 break;
             case 'w':
                 warmups = atoi(optarg);
+                break;
+            case 'c':
+                chunk_size = atoi(optarg);
                 break;
             default:
                 return 1;
